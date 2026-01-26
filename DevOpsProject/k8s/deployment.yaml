@@ -20,6 +20,16 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
+
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /secrets/AccountKey.json
+
+          volumeMounts:
+            - name: firebase-secret
+              mountPath: /secrets
+              readOnly: true
+
           readinessProbe:
             httpGet:
               path: /
@@ -32,3 +42,7 @@ spec:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
+      volumes: 
+        - name: firebase-secret
+          secret:
+            secretName: firebase-key
