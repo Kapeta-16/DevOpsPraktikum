@@ -1,10 +1,20 @@
 from flask import Flask, request, jsonify
 import os
 import firebase_admin
+from flask_cors import CORS
 from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+CORS(app)
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate(
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+    )
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 if not firebase_admin._apps:
     cred = credentials.Certificate(
@@ -109,6 +119,27 @@ def get_narudba(order_number):
     narudba_data["items"] = items
 
     return jsonify(narudba_data)
+
+# sve narudbe za korisnika
+@app.route("/user-orders/<username>")
+def get_user_orders(username): 
+    ordered_ref = db.collection("Users").document(username).collection("ordered").stream()
+    order_ids = []
+
+    for doc in ordered_ref: 
+        data = doc.to_dict()
+        order_id = data.get("orderId") or doc.id
+        order_ids.append(order_id)
+
+    orders = []
+    for order_id in order_ids:
+        order_doc = db.collection("Orders").document(order_id).get()
+        if order_doc.exists:
+            order_data = order_doc.to_dict()
+            order_data["order_number"] = order_id
+            orders.append(order_data)
+    return jsonify(orders)
+
 # SIGNIN
 
 @app.route("/signin", methods=["POST"])
