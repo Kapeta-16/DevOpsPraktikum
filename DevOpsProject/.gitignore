@@ -1,0 +1,18 @@
+# Python virtual environment
+.venv/
+venv/
+
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Firebase service account key
+AccountKey.json
+
+# VSCode settings
+.vscode/
+
+# Logs
+*.log
