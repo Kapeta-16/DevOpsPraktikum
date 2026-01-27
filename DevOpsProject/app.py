@@ -57,10 +57,6 @@ def create_narudba():
     if not items:
         return jsonify({"error": "Fale podaci"}), 400
     
-    user_ref = db.collection("Users").document(username)
-    user = user_ref.get()
-
-    
     now = datetime.now()
     eta = now + timedelta(minutes=45)
 
