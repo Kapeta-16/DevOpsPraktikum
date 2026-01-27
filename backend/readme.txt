@@ -27,6 +27,11 @@ FOOD ORDER & DELIVERY
 
 6. Docker & Requirements
    - as stuff changes we add it to requirements.txt and update the docker files
+   -docker compose was used for more efficient setup
+   -how to start up docker compose in terminal(compose.yaml file needed): 
+      docker compose up --build (for starting fresh or building project for first time)
+      or     
+      docker compose up(for already built image)              
 
 7. Kubernetes (k8s)
    - updating deployment and exposing new endpoints (if we need to)
