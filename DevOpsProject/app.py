@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import os
+import random
 import firebase_admin
 from flask_cors import CORS
 from firebase_admin import credentials, firestore
@@ -44,7 +45,7 @@ def get_meni():
         items.append(item)
 
     return jsonify(items)           
-           
+
 # NARUĐBA
 
 @app.route("/narudba", methods=["POST"])
@@ -62,7 +63,9 @@ def create_narudba():
 
     
     now = datetime.now()
-    eta = now + timedelta(minutes=45)
+    # Random deliveri
+    delivery_minutes = random.randint(15, 30)
+    eta = now + timedelta(minutes=delivery_minutes)
 
     ukupno = 0
     for item in items:
@@ -97,9 +100,19 @@ def create_narudba():
         })
         item_id += 1
 
-
+    # Save order reference to user's ordered collection
+    if username:
+        user_ref.collection("ordered").document(str(broj_narudbe)).set({
+            "orderId": str(broj_narudbe),
+            "placed_at": now.isoformat()
+        })
     
-    return jsonify({"poruka": "naruđba kreirana","order_id": narudba_ref.id, "ukupno": ukupno})  
+    return jsonify({
+        "poruka": "naruđba kreirana",
+        "order_id": narudba_ref.id, 
+        "ukupno": ukupno,
+        "eta_delivery": eta.isoformat()
+    })  
 
 # NARUDBE PO ID-U
 @app.route("/narudba/<order_number>", methods=["GET"])
@@ -111,6 +124,17 @@ def get_narudba(order_number):
         return jsonify({"error": "Narudžba ne postoji"}), 404
 
     narudba_data = narudba.to_dict()
+    narudba_data["order_number"] = order_number
+
+    # fallback za starije narudbe
+    if not narudba_data.get("eta_delivery") and narudba_data.get("placed_at"):
+        try:
+            placed = datetime.fromisoformat(narudba_data["placed_at"])
+            eta = placed + timedelta(minutes=random.randint(15, 60))
+            narudba_data["eta_delivery"] = eta.isoformat()
+            narudba_ref.update({"eta_delivery": eta.isoformat()})
+        except:
+            pass
 
     items = []
     for doc in narudba_ref.collection("items").stream():
@@ -137,13 +161,68 @@ def get_user_orders(username):
         if order_doc.exists:
             order_data = order_doc.to_dict()
             order_data["order_number"] = order_id
+            # fallback za starije narudbe
+            if not order_data.get("eta_delivery") and order_data.get("placed_at"):
+                try:
+                    placed = datetime.fromisoformat(order_data["placed_at"])
+                    eta = placed + timedelta(minutes=random.randint(15, 60))
+                    order_data["eta_delivery"] = eta.isoformat()
+                    db.collection("Orders").document(order_id).update({"eta_delivery": eta.isoformat()})
+                except:
+                    pass
             orders.append(order_data)
     return jsonify(orders)
 
-# SIGNIN
+# sve narudbe (za admina)
+@app.route("/all-orders", methods=["GET"])
+def get_all_orders():
+    orders = []
+    docs = db.collection("Orders").stream()
+    
+    for doc in docs:
+        order_data = doc.to_dict()
+        order_data["order_number"] = doc.id
+        # fallback za starije narudbe
+        if not order_data.get("eta_delivery") and order_data.get("placed_at"):
+            try:
+                placed = datetime.fromisoformat(order_data["placed_at"])
+                eta = placed + timedelta(minutes=random.randint(15, 60))
+                order_data["eta_delivery"] = eta.isoformat()
 
-@app.route("/signin", methods=["POST"])
-def signin():
+                db.collection("Orders").document(doc.id).update({"eta_delivery": eta.isoformat()})
+            except:
+                pass
+        orders.append(order_data)
+    
+    return jsonify(orders)
+
+# update statusa narudbe (za admina)
+@app.route("/narudba/<order_number>/status", methods=["PATCH"])
+def update_order_status(order_number):
+    data = request.json
+    new_status = data.get("status")
+    
+    if not new_status:
+        return jsonify({"error": "Status je obavezan"}), 400
+    
+    valid_statuses = ["pending", "preparing", "delivering", "delivered", "rejected"]
+    if new_status not in valid_statuses:
+        return jsonify({"error": f"Nevazeci status. Dozvoljeni: {valid_statuses}"}), 400
+    
+    narudba_ref = db.collection("Orders").document(str(order_number))
+    narudba = narudba_ref.get()
+    
+    if not narudba.exists:
+        return jsonify({"error": "Narudzba ne postoji"}), 404
+    
+    narudba_ref.update({"status": new_status})
+    
+    return jsonify({"poruka": "Status azuriran", "status": new_status})
+
+# SIGNUP
+
+@app.route("/signup", methods=["POST"])
+def signup():
     data = request.json
 
     username = data.get("username")
