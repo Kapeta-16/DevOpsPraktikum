@@ -16,6 +16,14 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
+if not firebase_admin._apps:
+    cred = credentials.Certificate(
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+    )
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
 @app.route("/")
 def home():
     return jsonify({"message": "Firebase spojen"})
