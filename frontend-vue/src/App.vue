@@ -3,6 +3,7 @@ import { useUserStore } from "./stores/user";
 import { useRouter } from "vue-router";
 import { computed } from "vue";
 import logoSvg from "./assets/logo.svg";
+import cornerImg from "./assets/corner.png";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -37,7 +38,25 @@ function logout() {
       </template>
     </div>
   </nav>
-  <router-view />
+  <main class="main-content">
+    <router-view />
+  </main>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-left"> 
+        <div class="footer-info">
+          <span class="footer-brand">Zlatni Čips</span>
+          <p class="footer-address">📍 Ulica Dobrog Okusa 42, Zagreb</p>
+          <p class="footer-hours">🕐 Pon - Ned: 10:00 - 22:00</p>
+          <p class="footer-phone">📞 +385 1 234 5678</p>
+          <p class="footer-copyright">© 2026 Zlatni Čips. Sva prava pridržana.</p>
+        </div>
+      </div>
+      <div class="footer-right">
+        <img :src="cornerImg" alt="Zlatni Čips" class="footer-corner-img" />
+      </div>
+    </div>
+  </footer>
 </template>
 
 <style scoped>
@@ -111,5 +130,77 @@ function logout() {
 .logout-btn:hover {
   background: #FFD449;
   color: #104911;
+}
+
+.main-content {
+  min-height: calc(100vh - 300px);
+}
+
+.footer {
+  background: linear-gradient(135deg, #104911 0%, #548C2F 100%);
+  color: white;
+  padding: 10px 20px;
+  margin-top: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.footer-logo {
+  width: 80px;
+  height: 80px;
+}
+
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-brand {
+  font-size: 2em;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.footer-right {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.footer-corner-img {
+  width: 300px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.footer-address,
+.footer-hours,
+.footer-phone {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1em;
+}
+
+.footer-copyright { 
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>
