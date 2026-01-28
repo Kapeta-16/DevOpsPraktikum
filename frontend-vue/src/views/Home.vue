@@ -135,18 +135,6 @@ function addToCart(item: any) {
   }
 }
 
-function increaseQty(idx: number) {
-  cart.value[idx].kolicina++;
-}
-
-function decreaseQty(idx: number) {
-  if (cart.value[idx].kolicina > 1) {
-    cart.value[idx].kolicina--;
-  } else {
-    removeFromCart(idx);
-  }
-}
-
 function removeFromCart(idx: number) {
   cart.value.splice(idx, 1);
 }
