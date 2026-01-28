@@ -206,6 +206,16 @@ docker run -d --name flask-app --restart always -p 3000:3000 -v $(pwd)/AccountKe
 docker ps
 docker logs flask-app
 ```
+#### 1.9.2 Drugi način pokretanja docker kontenjera(Docker compose)
+
+#Komande: 
+docker compose up --> pokreće postojeći kontenjer
+docker compose up --build --> stvara i pokreće novi kontenjer
+docker compose logs --> dodatne info o kontenjerima
+docker compose ps --> lista svih kotenjera
+
+#Za korak-po-korak setup, pogledajte u službenoj Docker Compose dokumentaciji:  
+[Docker Compose – Getting Started](https://docs.docker.com/compose/gettingstarted/)
 
 #### 1.10 Testiranje Backenda
 
