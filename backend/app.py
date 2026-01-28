@@ -43,13 +43,14 @@ def create_narudba():
     username = data.get("username")
     items = data.get("items")
 
-    if not items:
+    if not username or not items:
         return jsonify({"error": "Fale podaci"}), 400
     
     user_ref = db.collection("Users").document(username)
     user = user_ref.get()
 
-    
+    if not user.exists: return jsonify ({"error": "User nije logiran"}), 401
+
     now = datetime.now()
     # Random deliveri
     delivery_minutes = random.randint(15, 30)
