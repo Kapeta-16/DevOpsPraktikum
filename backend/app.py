@@ -17,21 +17,9 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate(
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
-    )
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-
 @app.route("/")
 def home():
     return jsonify({"message": "Firebase spojen"})
-
-
-#backend funckije za narucivanje i potvrdivanje dostave ako si ulogiran (jednostavno jedan korisnik na firebaseu kao collection users 
-# (admin i admin123 kao user i lozinka) <- za naruceno mogu  i ja)
 
 # MENI otvoren za guest i users
 @app.route("/meni", methods=["GET"])
