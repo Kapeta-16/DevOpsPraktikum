@@ -317,3 +317,145 @@ aws ec2 terminate-instances --instance-ids <INSTANCE_ID>
 # Brisanje S3 bucketa (čišćenje)
 aws s3 rb s3://devops-praktikum-frontend --force
 ```
+
+# Backend i Firebase Dokumentacija
+
+U ovom projektu implementiramo Flask backend povezan s Firebase Firestore-om, kontejnerizirano pomoću Dockera te spreman za implementaciju na Kubernetesu. Firebase je korišten kao primarna baza podataka te backend koristi REST API-je za dohvat menija, upravljanje naruđbama i autentifikaciju korisnika.
+
+## Backend Arhitektura
+
+### Tehnološki Stack
+
+- **Python 3.11**
+- **Flask** – REST API framework
+- **Gunicorn** – Produkcijski WSGI server
+- **Firebase Admin SDK** – Siguran server-side pristup Firebase-u
+- **Firestore** – NoSQL baza podataka
+- **Docker** – Kontejnerizacija
+- **Kubernetes** – Orkestracija (spremno za deployment)
+
+### Ulazna Točka Aplikacije
+
+- Datoteka: `app.py`
+- Flask aplikacijski objekt: `app`
+Gunicorn pokreće aplikaciju pomoću: `gunicorn -b 0.0.0.0:3000 app:app`
+
+
+## Firebase Postavke
+
+### Firebase Servisi Koji Se Koriste
+- **Firestore baza podataka**
+- **Firebase Admin SDK** (server-side autentifikacija)
+### Metoda Autentifikacije s Firebaseom
+Backend se autentificira s Firebase-om pomoću **Service Account ključa (JSON)**.
+
+#### Service Account (Ključ)
+- Datoteka: `AccountKey.json` preuzeta sa Firebase Store-a
+- Spremljena **izvan Docker image-a**
+- Montira se prilikom pokretanja kontejnera
+	`/secrets/AccountKey.json`
+
+### Varijabla Okruženja
+Firebase Admin SDK koristi sljedeću varijablu okruženja:
+`GOOGLE_APPLICATION_CREDENTIALS=/secrets/AccountKey.json`
+Ova varijabla govori Firebaseu gdje se nalazi service account ključ.
+
+
+## Povezivanje Flask Aplikacije s Firebaseom
+
+### Inicijalizacija
+Firebase se inicijalizira jednom prilikom pokretanja aplikacije:
+- Sprječava dvostruku inicijalizaciju
+- Učitava kredencijale iz montiranog JSON ključa
+- Kreira Firestore klijent
+
+Konceptualni tijek:
+1. Flask aplikacija se pokreće
+2. Firebase Admin SDK učitava kredencijale
+3. Kreira se Firestore klijent
+4. Operacije nad bazom postaju dostupne
+
+## Struktura Firestore Baze Podataka
+
+### Kolekcije
+
+#### Users (Korisnici)
+Sprema registrirane korisnike.
+
+|Polje|Tip|Opis|
+|---|---|---|
+|username|string|ID dokumenta|
+|password|string|Lozinka (plain-text, samo za razvoj)|
+|role|string|`user` ili `admin`|
+
+#### MenuItems (Stavke Menija)
+Sprema stavke menija dostupne svim korisnicima.
+
+| Polje  | Tip    | Opis          |
+| ------ | ------ | ------------- |
+| ime    | string | Naziv artikla |
+| cijena | number | Cijena        |
+
+
+#### Orders (Narudžbe)
+Svaka narudžba sprema se kao dokument.
+
+|Polje|Tip|Opis|
+|---|---|---|
+|order_number|number|Auto-inkrementirani broj|
+|customer_info|string|Korisničko ime ili `guest`|
+|status|string|Status narudžbe|
+|placed_at|string|ISO timestamp|
+|eta_delivery|string|Procijenjena dostava|
+|ukupno|number|Ukupna cijena|
+
+##### Podkolekcija: items
+Svaka narudžba sadrži podkolekciju `items`.
+
+|Polje|Tip|Opis|
+|---|---|---|
+|ime|string|Naziv artikla|
+|cijena|number|Cijena|
+|kolicina|number|Količina|
+
+
+#### BrojNarudba
+Koristi se kao brojač za narudžbe.
+
+|Polje|Tip|Opis|
+|---|---|---|
+|trenutni|number|Zadnji broj narudžbe|
+
+## Docker Integracija
+### Odgovornosti Dockerfile-a
+- Koristi lagani Python base image
+- Instalira ovisnosti iz `requirements.txt`
+- Kopira backend izvorni kod
+- Izlaže port `3000`
+- Pokreće Gunicorn
+### Pokretanje Kontejnera
+`docker run -p 3000:3000 \ -v "<putanja>/AccountKey.json:/secrets/AccountKey.json" \ flask-firebase-app`
+
+## CORS Konfiguracija
+
+Budući da frontend radi na drugom portu (npr. `localhost:5173`), CORS je omogućen pomoću **Flask-CORS** te nam omogućuje komunikaciju između preglednika i backend-a
+## Kubernetes
+Backend je spreman za Kubernetes:
+- Stateless kontejner
+- Tajne izdvojene iz aplikacije
+- Izlaganje servisa putem porta
+
+Planirane K8s komponente:
+- Deployment
+- Service
+- Secret (Firebase ključ)
+## Sažetak
+
+DevOps-spremnu arhitektura:
+- Flask REST API
+- Firebase Firestore integraciju
+- Sigurno rukovanje kredencijalima
+- Docker kontejnerizaciju
+- Kompatibilnost s Kubernetes deploymentom
+
+Sustav podrzava narucivanje nakon registracije, pregled menija svim korisnicima (čak i guest korisnicima), autentifikaciju korisnika i razdvajanje admin uloga.
